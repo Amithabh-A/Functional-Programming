@@ -1,0 +1,23 @@
+@code haskell
+
+data Tree a = Nil
+            | Node a (Tree a) (Tree a)
+
+class Functor t where
+  fmap :: (a->b) -> t a -> t b
+
+instance Functor [] where
+  -- fmap::(a-b)-> []a->[]b
+  fmap f []     = []
+  fmap f (x:xs) = (f x):(fmap f xs)
+
+instance Functor Tree where
+  --fmap :: (a->b) -> Tree a -> Tree b
+  fmap f Nil = Nil
+  fmap f (Node x lt rt) = (Node $f a (fmap f lt) (fmap f rt))
+
+@end
+
+* Test driven developement
+  A shit
+  eg : Palindrome code

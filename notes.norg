@@ -1,0 +1,383 @@
+* Functional Programming
+  2024-01-17 10:02
+  20:20:60 marks distribution
+
+  {https://bitbucket.org/piyush-kurur/functional-programming/src/master/}\[course website]
+
+** Haskell
+*** GHC compiler
+*** Tool to look into: Cabal
+
+  has an interpreter called hugs
+
+*** ghci - interactive mode for ghc
+    not an interpreter but a REPL
+
+
+    compile using ghc --make <filename>
+
+
+** number of words in a file
+   words :: String -> \\[String] (list of strings)
+   length :: \\[a] -> Int         (a is a type variable)
+
+   2024-01-31 10:04
+
+
+   wc str = length (words str)
+
+   alternatively       wc = length . words      (function composition)
+
+___
+
+* Haskell
+** Strongly typed and statically typed
+** supports parametric polymorphism
+** principled ad hoc polymorphism
+
+
+   Basic types : Int, Char, Bool, String  etc    (all start with capital letters)
+
+   all variables (including type variables) start with lowercase
+
+   Convention: camel case
+
+   \[2,3,5] is 2:3:5:\[]    (: is cons and :: is is of type opposite of SML)
+
+
+___
+2024-02-02 10:01
+
+* Introduction rules
+** List
+*** Nil rule:
+
+   ___
+    \\[]::\\[a]
+
+*** Cons rule:
+
+    x::a
+    xs::\[a]
+    ___
+    (x:xs)::\\[a]
+
+* associativity
+  function composition associates towards right
+  a . b . c is same as a . (b . c)
+___
+
+2024-02-03 10:59
+
+* Pattern matching
+** Patterns are essentially a subclass of expressions
+*** They are linear: no variable is repeated
+*** Wild card is a pattern
+
+pattern matching is purely matching. Not in terms of equality. (To check if two expressions are the same is an undecidable problem)
+
+** fold
+*** foldr
+    o :: a -> s -> s
+    (a1 o (a2 o (....(an o s0))))
+___
+
+2024-02-07 10:01
+
+* what fold does
+    :           --fold-->             f
+  /   \\                             x1 f
+x1      :                             x2 f
+      x2  :                             .
+    .                                   .
+    .                                   .
+    .
+
+  foldr :: (a->s->s) -> s -> \[a] -> s
+
+  List constructors: replace \[a] with s
+  s0 :: s and cf :: a->s->s
+
+  analyzing the constructors gives the type of fold
+
+* infix operators
+  (+) : binary operator Int -> Int -> Int
+  (+1) take x and gives x+1
+  (2+) takes x and gives 2+x
+  5 `mod` 2 is equivalent to mod 5 2 (use backtick for infix)
+
+* *Lazy Evaluation*
+  opposite: eager evaluation
+
+  e1 e2
+
+  only evaluate when required and only as much computation as required
+
+  ones=1:ones   (list of infinite ones)
+
+  foo x y = if x<y then e1 else y1
+  where y1 = very huge computation
+
+___
+2024-02-09 10:02
+
+zipWith f (x : xs) (y : ys) = f x y : zipWith f xs ys
+zipWith _ _ _ = \[]
+
+  tl : \[a] -> \[a]
+  tl (x:xs) = xs
+
+  fib = 1:1:zipWith (+) fib (tl fib)
+
+
+  \[1,1,2,3,5,...]   (fib)
++ \[1,2,3,5,...]     (tl fib)
+  ___
+  \[2,3,5,8,...]     (tl (tl fib))
+
+
+** Sieve
+   primes = sieve \[2..]
+
+   sieve (x:xs) = x:sieve(strikeoff x xs)
+
+   strikeoff x xs = remove (multiples x) xs
+
+   multiples x = \[k*x | k<-\[2..]]
+
+   remove rm@(r:rs) f@(y:ys) | y>r = remove rs f
+   | y=r = remove rs ys
+   | otherwise = y:remove rm ys
+
+
+** Question pretty format \[\[string]] by padding accordingly using just one iteration through the list
+___
+
+   2024-02-12 10:03
+
+   type Row = \[String]
+   type Table = \[Row]
+
+   To pad each word with spaces to make its length the same as all the other words in that column.
+
+   alignTable padding tab = map (padrow padding) tab
+   alignRow paddin row = zip align padding row
+   align n s = s ++ repeat ' ' (n-length s)           (++ is concatenation)
+
+   zip rows with padding of the previous rows and max gives the padding required for the table
+
+   keeping the padding as an infinite list is convenient for zip
+
+   zeroes: 0:zeroes
+   padRow r=map length r ++ zeroes
+   padTable = foldr combfn zeroes
+   combfn: Row -> \[Int] -> \[Int]
+   combfn = zipwith (\s n = max n (length s))
+
+   Write a function that traverses only once with the specs as:
+   Input: (1) a padding (list)  and (2) the table
+   Output: (alignTable padding tab,padTable tsb)
+
+
+   The amazing part of lazy evaluation is used when calling the function, say foo.
+
+   let (padded table,padding) = foo padding table in padded table
+
+** This indeed happens in just one iterarion
+___
+
+* 2024-02-14 10:11
+* foldl vs foldr
+** In eagerly evaluated languages foldl will be more efficient than foldr due to tail call optimization.
+*** but in lazy evaluated ones the computation anyway will be deferred by using data structure called thunks (which have a pointer to a computation). What is not stored in the heap for recursion (haskell, SML, etc don't use stack for receursion) will be used for evaluation.
+**** use stricter version of foldl for most purposes
+
+* Algebraic datatypes
+** data Tuple a b = T a b
+*** a and b are type variables. Tuple a b is a new type with a single constructor T::a->b->Tuple a b
+**** fstT (T x _)=x
+___
+* 2024-02-17 14:05
+** in haskell generally preferred to use curried style for types and starts in uppercase
+
+data BinTree a
+  = Empty
+   | Node (BinTree a) a (BinTree a)
+
+inorder Empty = \[]
+inorder (Node left root right) = inorder left ++ (root : inorder right)
+___
+
+* 2024-02-19 10:35
+** Question: convert a binary tree into another one with all node values replaced with minimum value in one pass
+
+** data Maybe a = Just a | Nothing
+
+*** data Either a b = Left a | Right b 
+***** usually to return something like Either err a (Conventionally right is right :) )
+**** hd :: \[a] -> Maybe a 
+****** the correct head function 
+     hds (x:_) = Just x
+     hds \[] = Nothing
+___
+* 2024-02-21 10:10
+* Type classes: A principled approach to parametric polymorphism
+** the head function above uses parametric polymorphism to ensure that whatever is returned is an element of the list if it returns Just x
+*** overloading rather. examples like (+)
+*** equality cannot be parametrically polymorphic
+    class Eq a where 
+    (==) :: a->a->bool
+
+*****  creates a class in the world of types
+******  an instance of this class can be created as:
+        instance Eq Bool where
+            (==) True True = True
+            (==) False False = True
+            (==) _ _ = False
+
+***** :type (==)          :: Eq a => a->a->Bool
+****** here the type is of the form:      constraints => tau
+       it's now possible to write foo x y = if x == y then "equal" else "not equal"
+
+       foo :: Eq a => a->a->string (haskell figures out the type)
+
+       instance (Eq a,Eq b) => Eq (a,b) where
+            (==) (a1,b1) (a2,b2) = a1==a2 && b1==b2
+
+       similarly for lists
+
+       instance Eq a => Eq \[a] where
+            (==) (x:xs) (y:ys) = x==y && xs==ys
+            (==) \[] \[] = True
+            (==) _ _ = False
+
+___
+* 2024-02-23 10:13
+** default definitions: 
+   class Eq a where
+   (==) :: a->a->Bool
+   (/=) :: a->a->bool
+   (/=) x y = not (x==y)
+
+** Hash consing
+*** Hash is a type
+*** hash :: String -> Hash
+***** data HString = HString Hash String      (will be hidden from the user so that arbitrary instances of HString can't be created)
+      fromString :: String -> HString
+      fromString str = HString (hash str) str
+      toString :: HString -> string
+      toString (HString _ s) = s
+
+****** instance Eq HString where                  (here we needn't mention Eq Hash and Eq String as constraints. Constraints are required only when we are defining over type variables)
+       (==) (HString h1 s1) (HString h2 s2) = h1==h2 && s1==s2
+
+___
+* 2024-02-26 10:02
+
+** constrained classes
+   class Eq a => Ord a where    (mentioning at the class level iwhere tself that the class ord has the constraint of Eq)
+          (\<=) :: a->a->Bool
+
+          instance Ord Bool where
+                (\<=) True False = False
+                (\<=) _ _ = True 
+
+          instance (Ord a, Ord b) => Ord(a,b)
+                (\<=) (x1,y1) (x2,y2) | x1==x2 = y1<=y2   
+                                      | x1<=x2
+                                      | otherwise = False
+
+   type inferred will be :: (Ord a,Ord b) => (a,b) -> (a,b) ->Bool
+          
+          instance Ord a => Ord \[a] where
+                (\<=) (x:xs) (y:ys) | x==y = xs <= ys
+                                    | x<=y = True
+                                    | otherwise = False
+                (\<=)  (x:xs) _ = False
+                (\<=) _ _ = True
+
+
+   sort :: Ord a => \[a] -> \[a]
+
+   sort \[] = \[]
+   sort (x:xs) = sort l ++ (x:sort xs) where (l,r) = partition xs (<= x) 
+___
+
+* 2024-02-28 10:03
+
+** ord should give a total order (x < = y or (inclusive) y<=x) (divisibility is an example of a partial order that's not a total order)
+*  data Day = Sunday | Monday | ..... | Saturday
+** For Eq instance we would have to write 7 lines
+*** For Ord it will take n^2 lines
+**** A hack will be to write a function from Day to Int and use the Ord of Int and n lines of pattern matching
+****** There is a class Enum in the standard library
+***** An easier way is by using the deriving feature
+      data Foo = Bar String
+              | Biz Int
+                  deriving (Eq,Ord,Enum) (make sure to add Eq even if using just Ord as Eq is required by Ord)
+
+****** Ordering will be according to the order of declaration of constructors i.e., Bar _ always <= Biz _
+
+      data Foo a = Foo a 
+                          deriving Eq
+
+***** the equivalent way of writing the instance would be: 
+****** instance Eq a => Eq (Foo a) where
+       (==) (Foo x) (Foo y) = x==y
+
+***** deriving makes it easy by avoiding writing verbose code
+
+
+** Coherence of instance definition:
+*** suppose two instances of a class like Ord are defined in two separate libraries and both are included in a codebase
+**** if both definitions are defined differently, it will result in problems
+___
+
+* 2024-03-01 10:03
+  ** Functors Applicative Monad
+*** class functor t where         (t is the functor here)
+**** fmap :: (a->b) -> t a -> t b
+
+     can think of list as function from type to type      list:: Type -> Type
+     takes type a and gives list of a
+
+     \[] :: Type -> Type
+     \[] Int = \[Int]
+
+     instance Functor \[] where
+     fmap :: (a->b) -> \[a] -> \[b]     (as \[] a = \[a])
+
+     instance Functor Maybe where
+     fmap::(a->b) -> Maybe a -> Maybe b
+     fmap f (Just x) = Just (f x)       (or can write it as:   Just $ f a  where ($) :: (a -> b) -> a -> b)
+     fmap _ Nothing = Nothing
+
+     instance Functor Tree where
+     fmap::(a->b) -> Tree a ->Tree b
+     fmap f Empty = Empty
+     fmap f (Node (left,node,right)) = Node (fmap f left,f node,fmap f right)
+
+*** Some laws to be followed by Functors (cannot be enforced in the language):
+***** fmap id =id
+***** fmap f . fmap g = fmap (f . g)
+
+___
+
+* 2024-03-04 10:22
+
+  Functors can be abstracted out as lists just like force is abstracted out as a vector as long as they obey the laws
+
+** IO Functor 
+*** type of i/o actions that result in a value of type a
+    getLine :: IO String
+    read :: Read a => String -> a
+
+**** \(read "123" :: Int)   Type has to be mentioned to give Int
+***** write function getIntLine :: IO Int
+      foo=fmap read           foo:: (Read a, Functor t) => t string -> t a
+      getIntLine = foo getLine      (as getLine guarantees IO functor)
+
+****** newtype is generally preferred over data if there is only a single constructor
+       newtype Person=Person String instead of 
+       data    Person=Person String
+
